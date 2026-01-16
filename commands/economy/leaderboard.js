@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -10,29 +10,24 @@ function loadUsers() {
 }
 
 module.exports = {
+  name: "lb",
+  aliases: ["leaderboard", "top"],
   category: "Economy",
 
-  data: new SlashCommandBuilder()
-    .setName("lb")
-    .setDescription("View the richest users in RoyalMint"),
-
-  async execute(interaction) {
+  async execute(message) {
     const users = loadUsers();
 
     if (Object.keys(users).length === 0) {
-      return interaction.reply({
-        content: "📉 No users found in the economy yet.",
-        ephemeral: true
-      });
+      return message.reply("📉 No users found in the economy yet.");
     }
 
-    // Sort users by total wealth
+    // sort by total wealth (wallet + bank)
     const sorted = Object.entries(users)
       .map(([id, data]) => ({
         id,
-        total: (data.coins || 0) + (data.bank || 0),
-        wallet: data.coins || 0,
-        bank: data.bank || 0
+        wallet: data.wallet || 0,
+        bank: data.bank || 0,
+        total: (data.wallet || 0) + (data.bank || 0)
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
@@ -44,24 +39,24 @@ module.exports = {
       let member;
 
       try {
-        member = await interaction.guild.members.fetch(user.id);
+        member = await message.guild.members.fetch(user.id);
       } catch {
         member = null;
       }
 
       description +=
         `**${i + 1}.** ${member ? member.user.tag : "Unknown User"}\n` +
-        `💰 Wallet: **${user.wallet}** | 🏦 Bank: **${user.bank}**\n` +
-        `👑 Total: **${user.total}**\n\n`;
+        `🪙 **Wallet:** ${user.wallet} | 🏦 **Bank:** ${user.bank}\n` +
+        `👑 **Total:** ${user.total}\n\n`;
     }
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Leaderboard")
+      .setColor("#000000") // dark black
       .setDescription(description)
-      .setColor("#FACC15")
       .setFooter({ text: "Category: Economy" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
