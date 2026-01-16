@@ -23,7 +23,7 @@ function rollDice() {
 
 module.exports = {
   name: "dice",
-  aliases: [dce],
+  aliases: ["dce"], // ✅ FIXED
   category: "Gambling",
 
   async execute(message, args) {
@@ -32,7 +32,7 @@ module.exports = {
 
     if (!bet || bet < MIN_BET || bet > MAX_BET) {
       return message.reply(
-        `❌ Bet must be between ${MIN_BET} and ${MAX_BET}.`
+        `❌ Bet must be between **${MIN_BET}** and **${MAX_BET}**.`
       );
     }
 
@@ -54,7 +54,7 @@ module.exports = {
       return message.reply("💸 You don't have enough coins in your wallet.");
     }
 
-    // deduct bet
+    // Deduct bet
     users[userId].wallet -= bet;
 
     const roll = rollDice();
