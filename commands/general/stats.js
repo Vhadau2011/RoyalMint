@@ -2,6 +2,9 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
+// 🔒 ENV CHANNEL LOCK
+const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID;
+
 const usersPath = path.join(__dirname, "../../data/users.json");
 
 function loadUsers() {
@@ -14,7 +17,6 @@ function formatUptime(ms) {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
-
   return `${d}d ${h}h ${m}m`;
 }
 
@@ -26,8 +28,15 @@ module.exports = {
     .setDescription("View RoyalMint bot and economy statistics"),
 
   async execute(interaction) {
-    const users = loadUsers();
+    // 🔒 Channel restriction
+    if (interaction.channelId !== GENERAL_CHANNEL_ID) {
+      return interaction.reply({
+        content: "❌ This command can only be used in the official channel.",
+        ephemeral: true
+      });
+    }
 
+    const users = loadUsers();
     const totalUsers = Object.keys(users).length;
 
     let totalWallet = 0;
