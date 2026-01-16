@@ -1,9 +1,9 @@
-
 const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
+const PREFIX = process.env.PREFIX || ".";
 
 function loadUsers() {
   if (!fs.existsSync(usersPath)) return {};
@@ -25,7 +25,9 @@ module.exports = {
     const amount = parseInt(args[1]);
 
     if (!receiver) {
-      return message.reply("❌ Mention a user to pay.\nUsage: `.pay @user <amount>`");
+      return message.reply(
+        `❌ Mention a user to pay.\nUsage: \`${PREFIX}pay @user <amount>\``
+      );
     }
 
     if (receiver.bot) {
@@ -43,17 +45,11 @@ module.exports = {
     const users = loadUsers();
 
     if (!users[senderId]) {
-      users[senderId] = {
-        wallet: 5000,
-        bank: 0
-      };
+      users[senderId] = { wallet: 5000, bank: 0 };
     }
 
     if (!users[receiver.id]) {
-      users[receiver.id] = {
-        wallet: 5000,
-        bank: 0
-      };
+      users[receiver.id] = { wallet: 5000, bank: 0 };
     }
 
     if (users[senderId].wallet < amount) {
@@ -66,7 +62,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Payment Sent")
-      .setColor("#000000") // dark black
+      .setColor("#000000")
       .setDescription(
         `🪙 **${amount} Coins** sent to **${receiver.tag}**`
       )
