@@ -1,37 +1,25 @@
 const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
-  name: "support",
+  name: "ping",
   category: "General",
 
   async execute(message) {
-    const SUPPORT_CHANNEL_ID = process.env.SUPPORT_CHANNEL_ID;
+    const sent = await message.reply("🏓 Pinging...");
 
-    // 🔒 LOCK USING .env (ECONOMY STYLE)
-    if (SUPPORT_CHANNEL_ID && message.channel.id !== SUPPORT_CHANNEL_ID) {
-      return message.reply(
-        "❌ This command can only be used in the support channel."
-      );
-    }
+    const botLatency = sent.createdTimestamp - message.createdTimestamp;
+    const apiLatency = Math.round(message.client.ws.ping);
 
     const embed = new EmbedBuilder()
-      .setTitle("🛠️ RoyalMint • Support")
-      .setDescription(
-        "Need help or want to report a bug?\n\n" +
-        "🔗 https://discord.gg/Vejpj447"
-      )
+      .setTitle("👑 RoyalMint • Ping")
       .setColor("#22C55E")
-      .setFooter({ text: "Category: General" });
-
-    message.reply({ embeds: [embed] });
-  }
-};      )
+      .addFields(
+        { name: "🤖 Bot Latency", value: `${botLatency}ms`, inline: true },
+        { name: "🌐 API Latency", value: `${apiLatency}ms`, inline: true }
+      )
       .setFooter({ text: "Category: General" })
       .setTimestamp();
 
-    await interaction.editReply({
-      content: null,
-      embeds: [embed]
-    });
+    await sent.edit({ content: null, embeds: [embed] });
   }
-}; 
+};
