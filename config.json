@@ -1,0 +1,39 @@
+{
+  "bot": {
+    "name": "RoyalMint",
+    "prefix": "/",
+    "embedColor": "#8B5CF6"
+  },
+
+  "economy": {
+    "startBalance": 1000,
+    "dailyReward": 500,
+    "work": {
+      "min": 100,
+      "max": 400
+    },
+    "currency": {
+      "name": "Coins",
+      "symbol": "🪙"
+    }
+  },
+
+  "gambling": {
+    "enabled": true,
+    "minBet": 50,
+    "maxBet": 5000,
+    "cooldown": 30
+  },
+
+  "discounts": {
+    "enabled": true,
+    "maxActive": 20,
+    "autoPost": true
+  },
+
+  "security": {
+    "ownerOnlyEval": true,
+    "guardsCanManageEconomy": true,
+    "guardsCanManageDiscounts": true
+  }
+}
