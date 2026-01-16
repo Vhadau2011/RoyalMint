@@ -1,40 +1,31 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-
-// 🔒 CHANNEL LOCK (ENV)
-const GENERAL_CHANNEL_ID = process.env.GENERAL_CHANNEL_ID;
+const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
+  name: "support",
   category: "General",
 
-  data: new SlashCommandBuilder()
-    .setName("ping")
-    .setDescription("Check RoyalMint bot latency"),
+  async execute(message) {
+    const SUPPORT_CHANNEL_ID = process.env.SUPPORT_CHANNEL_ID;
 
-  async execute(interaction) {
-    // 🔒 Channel check
-    if (interaction.channelId !== GENERAL_CHANNEL_ID) {
-      return interaction.reply({
-        content: "❌ This command can only be used in the official channel.",
-        ephemeral: true
-      });
+    // 🔒 LOCK USING .env (ECONOMY STYLE)
+    if (SUPPORT_CHANNEL_ID && message.channel.id !== SUPPORT_CHANNEL_ID) {
+      return message.reply(
+        "❌ This command can only be used in the support channel."
+      );
     }
 
-    const sent = await interaction.reply({
-      content: "🏓 Pinging...",
-      fetchReply: true
-    });
-
-    const botLatency =
-      sent.createdTimestamp - interaction.createdTimestamp;
-    const apiLatency = Math.round(interaction.client.ws.ping);
-
     const embed = new EmbedBuilder()
-      .setTitle("👑 RoyalMint • Ping")
-      .setColor("#22C55E")
-      .addFields(
-        { name: "🤖 Bot Latency", value: `${botLatency}ms`, inline: true },
-        { name: "🌐 API Latency", value: `${apiLatency}ms`, inline: true }
+      .setTitle("🛠️ RoyalMint • Support")
+      .setDescription(
+        "Need help or want to report a bug?\n\n" +
+        "🔗 https://discord.gg/Vejpj447"
       )
+      .setColor("#22C55E")
+      .setFooter({ text: "Category: General" });
+
+    message.reply({ embeds: [embed] });
+  }
+};      )
       .setFooter({ text: "Category: General" })
       .setTimestamp();
 
