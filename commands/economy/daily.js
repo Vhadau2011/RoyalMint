@@ -1,10 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
+
 const DAILY_COOLDOWN = 24 * 60 * 60 * 1000; // 24 hours
-const DAILY_AMOUNT = 500; // keep in sync with config.json if you want
+const DAILY_AMOUNT = 500;
 
 function loadUsers() {
   if (!fs.existsSync(usersPath)) return {};
@@ -16,20 +17,19 @@ function saveUsers(users) {
 }
 
 module.exports = {
-  category: "Economy", // 🔥 used by menu/help
+  name: "daily",
+  aliases: [],
+  category: "Economy",
 
-  data: new SlashCommandBuilder()
-    .setName("daily")
-    .setDescription("Claim your daily RoyalMint reward"),
-
-  async execute(interaction) {
+  async execute(message) {
     const users = loadUsers();
-    const userId = interaction.user.id;
+    const userId = message.author.id;
     const now = Date.now();
 
     if (!users[userId]) {
       users[userId] = {
-        coins: 0,
+        wallet: 5000,
+        bank: 0,
         lastDaily: 0
       };
     }
@@ -39,27 +39,28 @@ module.exports = {
 
     if (remaining > 0) {
       const hours = Math.floor(remaining / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const minutes = Math.floor(
+        (remaining % (1000 * 60 * 60)) / (1000 * 60)
+      );
 
-      return interaction.reply({
-        content: `⏳ You already claimed your daily.\nCome back in **${hours}h ${minutes}m**.`,
-        ephemeral: true
-      });
+      return message.reply(
+        `⏳ You already claimed your daily.\nCome back in **${hours}h ${minutes}m**.`
+      );
     }
 
-    users[userId].coins += DAILY_AMOUNT;
+    users[userId].wallet += DAILY_AMOUNT;
     users[userId].lastDaily = now;
     saveUsers(users);
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Daily Reward")
+      .setColor("#000000") // dark black
       .setDescription(
-        `You claimed your daily reward!\n\n🪙 **+${DAILY_AMOUNT} Coins**`
+        `🎁 You claimed your daily reward!\n\n🪙 **+${DAILY_AMOUNT} Coins**`
       )
-      .setColor("#8B5CF6")
       .setFooter({ text: "Category: Economy" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
