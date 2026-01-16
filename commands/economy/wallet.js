@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -9,23 +10,25 @@ function loadUsers() {
   return JSON.parse(fs.readFileSync(usersPath, "utf8"));
 }
 
+function saveUsers(users) {
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
+
 module.exports = {
+  name: "wallet",
   category: "Economy",
 
-  data: new SlashCommandBuilder()
-    .setName("wallet")
-    .setDescription("View your RoyalMint wallet"),
-
-  async execute(interaction) {
+  async execute(message) {
     const users = loadUsers();
-    const userId = interaction.user.id;
+    const userId = message.author.id;
 
     // Ensure user exists
     if (!users[userId]) {
-      users[userId] = { wallet: 0, bank: 0 };
+      users[userId] = { coins: 0, bank: 0 };
+      saveUsers(users);
     }
 
-    const wallet = users[userId].wallet ?? 0;
+    const wallet = users[userId].coins ?? 0;
     const bank = users[userId].bank ?? 0;
 
     const embed = new EmbedBuilder()
@@ -37,6 +40,6 @@ module.exports = {
       .setFooter({ text: "Category: Economy" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
