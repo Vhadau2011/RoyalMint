@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
@@ -17,7 +18,7 @@ module.exports = {
       });
     }
 
-    // Group commands by category
+    // Group slash commands by category
     const categories = {};
 
     for (const cmd of commands.values()) {
@@ -29,26 +30,28 @@ module.exports = {
     let description = "";
 
     for (const [category, cmds] of Object.entries(categories)) {
-      let lockNote = "";
+      let note = "";
 
       if (category === "Gambling") {
-        lockNote = " *(🎰 Gambling Channel Only)*";
+        note = " *(🎰 Gambling Channel • ENV Locked)*";
       } else if (category === "Economy") {
-        lockNote = " *(💰 Economy Rules Apply)*";
+        note = " *(💰 Economy System)*";
+      } else if (category === "General") {
+        note = " *(🌐 Global)*";
       }
 
       description +=
-        `\n**📂 ${category}${lockNote}**\n` +
+        `\n**📂 ${category}${note}**\n` +
         cmds.map(c => `• \`/${c}\``).join("\n") +
         "\n";
     }
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Command Menu")
-      .setDescription(description)
       .setColor("#A855F7")
+      .setDescription(description)
       .setFooter({
-        text: "RoyalMint • Economy & Gambling protected | General commands everywhere"
+        text: "Message commands use PREFIX from .env | Gambling is channel-locked"
       })
       .setTimestamp();
 
