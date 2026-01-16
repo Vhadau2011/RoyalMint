@@ -14,6 +14,10 @@ function loadUsers() {
   return JSON.parse(fs.readFileSync(usersPath, "utf8"));
 }
 
+function saveUsers(users) {
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
+
 function getUserRole(member) {
   if (member.id === OWNER_ID) return "👑 OWNER";
   if (MOD_IDS.includes(member.id)) return "🛡️ MOD";
@@ -31,18 +35,20 @@ module.exports = {
       message.mentions.members.first() || message.member;
 
     const users = loadUsers();
+
     if (!users[target.id]) {
-      users[target.id] = { coins: 0, bank: 0 };
-      fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+      users[target.id] = {
+        wallet: 5000,
+        bank: 0
+      };
+      saveUsers(users);
     }
 
-    const wallet = users[target.id].coins || 0;
-    const bank = users[target.id].bank || 0;
+    const { wallet, bank } = users[target.id];
     const role = getUserRole(target);
 
     const embed = new EmbedBuilder()
-      // 🟡 GOLD SIDE BAR
-      .setColor("#FFD700")
+      .setColor("#FFD700") // GOLD
       .setTitle("『 RE:ZERO PROFILE 』")
       .setThumbnail(target.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
@@ -51,8 +57,8 @@ module.exports = {
         `ROLE   : ${role}\n` +
         "```\n" +
         "```fix\n" +
-        `BANK   : ${bank}\n` +
         `WALLET : ${wallet}\n` +
+        `BANK   : ${bank}\n` +
         "```"
       )
       .setFooter({
