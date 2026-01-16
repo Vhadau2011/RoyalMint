@@ -4,7 +4,7 @@ const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
 
-// 🔒 Gambling channel lock
+// 🔒 Gambling channel lock (ENV)
 const GAMBLING_CHANNEL_ID = process.env.GAMBLING_CHANNEL_ID;
 
 // 🎡 Config
@@ -12,12 +12,8 @@ const MIN_BET = 50;
 const MAX_BET = 5000;
 
 // Roulette layout
-const RED_NUMBERS = [
-  1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36
-];
-const BLACK_NUMBERS = [
-  2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35
-];
+const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+const BLACK_NUMBERS = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];
 
 function loadUsers() {
   if (!fs.existsSync(usersPath)) return {};
@@ -70,10 +66,10 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // 🔒 Channel check
+    // 🔒 Channel lock
     if (interaction.channelId !== GAMBLING_CHANNEL_ID) {
       return interaction.reply({
-        content: "🎡 Roulette can only be played in the gambling channel.",
+        content: "🎡 Roulette can only be played in are official server channel only.",
         ephemeral: true
       });
     }
@@ -84,9 +80,11 @@ module.exports = {
     const userId = interaction.user.id;
 
     const users = loadUsers();
-    if (!users[userId]) users[userId] = { coins: 0, bank: 0 };
+    if (!users[userId]) {
+      users[userId] = { wallet: 5000, bank: 0 };
+    }
 
-    if (users[userId].coins < bet) {
+    if (users[userId].wallet < bet) {
       return interaction.reply({
         content: "💸 You don't have enough coins in your wallet.",
         ephemeral: true
@@ -112,7 +110,7 @@ module.exports = {
     }
 
     // Deduct bet
-    users[userId].coins -= bet;
+    users[userId].wallet -= bet;
 
     // Spin
     const resultNumber = spinRoulette();
@@ -121,20 +119,17 @@ module.exports = {
     let win = 0;
     let resultText = "❌ You lost.";
 
-    if (type === "color") {
-      if (value === resultColor) {
-        const multiplier = value === "green" ? 14 : 2;
-        win = bet * multiplier;
-        users[userId].coins += win;
-        resultText = `🎉 **WIN!** ${value.toUpperCase()} hit — **${win} coins** (x${multiplier})`;
-      }
-    } else {
-      const pickedNumber = Number(value);
-      if (pickedNumber === resultNumber) {
-        win = bet * 35;
-        users[userId].coins += win;
-        resultText = `🎉 **JACKPOT!** Number **${resultNumber}** — **${win} coins** (x35)`;
-      }
+    if (type === "color" && value === resultColor) {
+      const multiplier = value === "green" ? 14 : 2;
+      win = bet * multiplier;
+      users[userId].wallet += win;
+      resultText = `🎉 **WIN!** ${value.toUpperCase()} hit — **${win} coins** (x${multiplier})`;
+    }
+
+    if (type === "number" && Number(value) === resultNumber) {
+      win = bet * 35;
+      users[userId].wallet += win;
+      resultText = `🎉 **JACKPOT!** Number **${resultNumber}** — **${win} coins** (x35)`;
     }
 
     saveUsers(users);
@@ -149,7 +144,7 @@ module.exports = {
       )
       .setColor(
         resultColor === "red" ? "#EF4444" :
-        resultColor === "black" ? "#111827" :
+        resultColor === "black" ? "#000000" :
         "#22C55E"
       )
       .setFooter({ text: "Category: Gambling" })
