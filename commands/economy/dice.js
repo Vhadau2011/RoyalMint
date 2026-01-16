@@ -1,11 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
-
-// 🔒 Gambling channel lock
-const GAMBLING_CHANNEL_ID = process.env.GAMBLING_CHANNEL_ID;
 
 // 🎲 Config
 const MIN_BET = 50;
@@ -25,79 +22,66 @@ function rollDice() {
 }
 
 module.exports = {
+  name: "dice",
+  aliases: [dce],
   category: "Gambling",
 
-  data: new SlashCommandBuilder()
-    .setName("dice")
-    .setDescription("Roll the dice and test your luck")
-    .addIntegerOption(option =>
-      option
-        .setName("bet")
-        .setDescription("Amount of coins to bet")
-        .setRequired(true)
-        .setMinValue(MIN_BET)
-        .setMaxValue(MAX_BET)
-    )
-    .addIntegerOption(option =>
-      option
-        .setName("number")
-        .setDescription("Pick a number between 1 and 6")
-        .setRequired(true)
-        .setMinValue(1)
-        .setMaxValue(6)
-    ),
+  async execute(message, args) {
+    const bet = parseInt(args[0]);
+    const pick = parseInt(args[1]);
 
-  async execute(interaction) {
-    // 🔒 Channel check
-    if (interaction.channelId !== GAMBLING_CHANNEL_ID) {
-      return interaction.reply({
-        content: "🎲 Dice can only be played in the gambling channel.",
-        ephemeral: true
-      });
+    if (!bet || bet < MIN_BET || bet > MAX_BET) {
+      return message.reply(
+        `❌ Bet must be between ${MIN_BET} and ${MAX_BET}.`
+      );
     }
 
-    const bet = interaction.options.getInteger("bet");
-    const pick = interaction.options.getInteger("number");
-    const userId = interaction.user.id;
+    if (!pick || pick < 1 || pick > 6) {
+      return message.reply("❌ Pick a number between **1 and 6**.");
+    }
 
     const users = loadUsers();
-    if (!users[userId]) users[userId] = { coins: 0, bank: 0 };
+    const userId = message.author.id;
 
-    if (users[userId].coins < bet) {
-      return interaction.reply({
-        content: "💸 You don't have enough coins in your wallet.",
-        ephemeral: true
-      });
+    if (!users[userId]) {
+      users[userId] = {
+        wallet: 5000,
+        bank: 0
+      };
     }
 
-    // Deduct bet
-    users[userId].coins -= bet;
+    if (users[userId].wallet < bet) {
+      return message.reply("💸 You don't have enough coins in your wallet.");
+    }
+
+    // deduct bet
+    users[userId].wallet -= bet;
 
     const roll = rollDice();
-    let win = 0;
-    let resultText = "❌ You lost.";
+    let winAmount = 0;
+    let resultText;
 
     if (roll === pick) {
-      win = bet * 5;
-      users[userId].coins += win;
-      resultText = `🎉 **WIN!** You rolled **${roll}** and won **${win} coins** (x5)`;
+      winAmount = bet * 5;
+      users[userId].wallet += winAmount;
+      resultText = `🎉 **WIN!** You rolled **${roll}** and won **${winAmount} coins** (x5)`;
     } else {
-      resultText = `🎲 Rolled **${roll}** — better luck next time.`;
+      resultText = `❌ Rolled **${roll}** — better luck next time.`;
     }
 
     saveUsers(users);
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Dice")
+      .setColor(winAmount > 0 ? "#22C55E" : "#EF4444")
       .setDescription(
-        `🎯 Your Pick: **${pick}**\n` +
-        `🎲 Dice Roll: **${roll}**\n\n` +
-        `🪙 Bet: **${bet}**\n${resultText}`
+        `🎯 **Your Pick:** ${pick}\n` +
+        `🎲 **Dice Roll:** ${roll}\n\n` +
+        `🪙 **Bet:** ${bet}\n${resultText}`
       )
-      .setColor(win > 0 ? "#22C55E" : "#EF4444")
       .setFooter({ text: "Category: Gambling" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
