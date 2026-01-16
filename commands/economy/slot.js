@@ -4,7 +4,7 @@ const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
 
-// 🔒 Gambling channel lock
+// 🔒 Gambling channel lock (ENV)
 const GAMBLING_CHANNEL_ID = process.env.GAMBLING_CHANNEL_ID;
 
 // 🎰 Config
@@ -51,10 +51,10 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // 🔒 Channel check
+    // 🔒 Channel lock
     if (interaction.channelId !== GAMBLING_CHANNEL_ID) {
       return interaction.reply({
-        content: "🎰 Slots can only be played in the gambling channel.",
+        content: "🎰 Slots can only be played in offical server channel.",
         ephemeral: true
       });
     }
@@ -63,17 +63,19 @@ module.exports = {
     const userId = interaction.user.id;
 
     const users = loadUsers();
-    if (!users[userId]) users[userId] = { coins: 0, bank: 0 };
+    if (!users[userId]) {
+      users[userId] = { wallet: 5000, bank: 0 };
+    }
 
-    if (users[userId].coins < bet) {
+    if (users[userId].wallet < bet) {
       return interaction.reply({
         content: "💸 You don't have enough coins in your wallet.",
         ephemeral: true
       });
     }
 
-    // Deduct bet first
-    users[userId].coins -= bet;
+    // Deduct bet
+    users[userId].wallet -= bet;
 
     // Spin slots
     const a = spin();
@@ -87,11 +89,11 @@ module.exports = {
     if (a === b && b === c) {
       const multiplier = MULTIPLIERS[a] || 2;
       win = bet * multiplier;
-      users[userId].coins += win;
+      users[userId].wallet += win;
       resultText = `🎉 **JACKPOT!** You won **${win} coins** (x${multiplier})`;
     } else if (a === b || b === c || a === c) {
       win = Math.floor(bet * 1.5);
-      users[userId].coins += win;
+      users[userId].wallet += win;
       resultText = `✨ **Nice!** You won **${win} coins**`;
     }
 
@@ -102,7 +104,7 @@ module.exports = {
       .setDescription(
         `🎰 **[ ${a} | ${b} | ${c} ]**\n\n` +
         `🪙 Bet: **${bet}**\n` +
-        `${resultText}`
+        resultText
       )
       .setColor(win > 0 ? "#22C55E" : "#EF4444")
       .setFooter({ text: "Category: Gambling" })
@@ -110,4 +112,4 @@ module.exports = {
 
     await interaction.reply({ embeds: [embed] });
   }
-}; 
+};
