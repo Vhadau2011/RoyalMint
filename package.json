@@ -1,0 +1,16 @@
+{
+  "name": "royalmint",
+  "version": "1.0.0",
+  "description": "RoyalMint is a premium Discord economy and discount bot with powerful owner controls.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "mudau_t",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5"
+  }
+}
