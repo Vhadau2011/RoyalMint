@@ -20,8 +20,13 @@ module.exports = {
     const users = loadUsers();
     const userId = interaction.user.id;
 
-    const wallet = users[userId]?.coins || 0;
-    const bank = users[userId]?.bank || 0;
+    // Ensure user exists
+    if (!users[userId]) {
+      users[userId] = { wallet: 0, bank: 0 };
+    }
+
+    const wallet = users[userId].wallet ?? 0;
+    const bank = users[userId].bank ?? 0;
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Wallet")
@@ -29,8 +34,9 @@ module.exports = {
         `🪙 **Wallet:** ${wallet}\n🏦 **Bank:** ${bank}`
       )
       .setColor("#8B5CF6")
-      .setFooter({ text: "Category: Economy" });
+      .setFooter({ text: "Category: Economy" })
+      .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
   }
-}; 
+};
