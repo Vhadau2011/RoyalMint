@@ -6,8 +6,8 @@ const usersPath = path.join(__dirname, "../../data/users.json");
 
 // ===== CONFIG =====
 const WORK_COOLDOWN = 30 * 60 * 1000; // 30 minutes
-const WORK_MIN = 100;
-const WORK_MAX = 400;
+const WORK_MIN = 1000;
+const WORK_MAX = 5500;
 
 function loadUsers() {
   if (!fs.existsSync(usersPath)) return {};
@@ -23,7 +23,7 @@ function randomAmount(min, max) {
 }
 
 module.exports = {
-  category: "Economy", // 🔥 used by menu/help
+  category: "Economy",
 
   data: new SlashCommandBuilder()
     .setName("work")
@@ -34,10 +34,11 @@ module.exports = {
     const userId = interaction.user.id;
     const now = Date.now();
 
+    // Ensure user exists
     if (!users[userId]) {
       users[userId] = {
         coins: 0,
-        lastDaily: 0,
+        bank: 0,
         lastWork: 0
       };
     }
@@ -47,9 +48,8 @@ module.exports = {
 
     if (remaining > 0) {
       const minutes = Math.ceil(remaining / (1000 * 60));
-
       return interaction.reply({
-        content: `🛠️ You are tired!\nTry working again in **${minutes} minute(s)**.`,
+        content: `🛠️ You are tired!\nTry again in **${minutes} minute(s)**.`,
         ephemeral: true
       });
     }
