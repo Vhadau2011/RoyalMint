@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+ 
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -14,83 +15,65 @@ function saveUsers(users) {
 }
 
 module.exports = {
+  name: "bank",
+  aliases: ["atm"],
   category: "Economy",
 
-  data: new SlashCommandBuilder()
-    .setName("bank")
-    .setDescription("Deposit or withdraw coins from your bank")
-
-    .addSubcommand(sub =>
-      sub
-        .setName("deposit")
-        .setDescription("Deposit coins into your bank")
-        .addIntegerOption(opt =>
-          opt
-            .setName("amount")
-            .setDescription("Amount to deposit")
-            .setRequired(true)
-            .setMinValue(1)
-        )
-    )
-
-    .addSubcommand(sub =>
-      sub
-        .setName("withdraw")
-        .setDescription("Withdraw coins from your bank")
-        .addIntegerOption(opt =>
-          opt
-            .setName("amount")
-            .setDescription("Amount to withdraw")
-            .setRequired(true)
-            .setMinValue(1)
-        )
-    ),
-
-  async execute(interaction) {
+  async execute(message, args) {
     const users = loadUsers();
-    const userId = interaction.user.id;
-    const sub = interaction.options.getSubcommand();
-    const amount = interaction.options.getInteger("amount");
+    const userId = message.author.id;
 
     if (!users[userId]) {
-      users[userId] = { coins: 0, bank: 0 };
+      users[userId] = {
+        wallet: 5000,
+        bank: 0
+      };
     }
 
-    if (sub === "deposit") {
-      if (users[userId].coins < amount) {
-        return interaction.reply({
-          content: "❌ You don't have enough coins in your wallet.",
-          ephemeral: true
-        });
+    const action = args[0];
+    const amount = parseInt(args[1]);
+
+    if (!action || !["deposit", "withdraw"].includes(action)) {
+      return message.reply(
+        "❌ Usage: `.bank deposit <amount>` or `.bank withdraw <amount>`"
+      );
+    }
+
+    if (!amount || amount < 1) {
+      return message.reply("❌ Please provide a valid amount.");
+    }
+
+    if (action === "deposit") {
+      if (users[userId].wallet < amount) {
+        return message.reply("❌ You don't have enough coins in your wallet.");
       }
 
-      users[userId].coins -= amount;
+      users[userId].wallet -= amount;
       users[userId].bank += amount;
     }
 
-    if (sub === "withdraw") {
+    if (action === "withdraw") {
       if (users[userId].bank < amount) {
-        return interaction.reply({
-          content: "❌ You don't have enough coins in your bank.",
-          ephemeral: true
-        });
+        return message.reply("❌ You don't have enough coins in your bank.");
       }
 
       users[userId].bank -= amount;
-      users[userId].coins += amount;
+      users[userId].wallet += amount;
     }
 
     saveUsers(users);
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Bank")
+      .setColor("#000000") // dark black
       .setDescription(
-        `✅ **${sub === "deposit" ? "Deposited" : "Withdrew"} ${amount} Coins**\n\n🪙 Wallet: ${users[userId].coins}\n🏦 Bank: ${users[userId].bank}`
+        `✅ **${action === "deposit" ? "Deposited" : "Withdrew"} ${amount} Coins**\n\n` +
+        `🪙 **Wallet:** ${users[userId].wallet}\n` +
+        `🏦 **Bank:** ${users[userId].bank}`
       )
-      .setColor("#8B5CF6")
       .setFooter({ text: "Category: Economy" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
-}; 
+};
