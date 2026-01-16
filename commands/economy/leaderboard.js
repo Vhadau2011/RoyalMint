@@ -1,3 +1,4 @@
+
 const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
@@ -21,7 +22,7 @@ module.exports = {
       return message.reply("📉 No users found in the economy yet.");
     }
 
-    // sort by total wealth (wallet + bank)
+    // Sort by total wealth (wallet + bank)
     const sorted = Object.entries(users)
       .map(([id, data]) => ({
         id,
@@ -52,7 +53,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Leaderboard")
-      .setColor("#000000") // dark black
+      .setColor("#000000")
       .setDescription(description)
       .setFooter({ text: "Category: Economy" })
       .setTimestamp();
