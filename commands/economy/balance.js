@@ -2,6 +2,7 @@ const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
+const PREFIX = process.env.PREFIX;
 const usersPath = path.join(__dirname, "../../data/users.json");
 
 function getUsers() {
@@ -16,15 +17,18 @@ function saveUsers(users) {
 module.exports = {
   name: "balance",
   aliases: ["bal"],
-  category: "Economy", // 🔥 menu uses this
+  category: "Economy",
 
   async execute(message, args) {
+    // 🔐 PREFIX CHECK
+    if (!message.content.startsWith(PREFIX)) return;
+
     const users = getUsers();
 
     const target =
       message.mentions.users.first() || message.author;
 
-    // create user if not exists
+    // Create user if not exists
     if (!users[target.id]) {
       users[target.id] = {
         wallet: 5000,
@@ -37,15 +41,13 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Balance")
-      .setColor("#000000") // dark black
+      .setColor("#000000")
       .setThumbnail(target.displayAvatarURL())
       .setDescription(
         `🪙 **Wallet:** ${wallet}\n` +
         `🏦 **Bank:** ${bank}`
       )
-      .setFooter({
-        text: "Category: Economy"
-      });
+      .setFooter({ text: "Category: Economy" });
 
     message.reply({ embeds: [embed] });
   }
