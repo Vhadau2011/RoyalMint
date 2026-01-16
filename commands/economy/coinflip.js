@@ -1,11 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
-
-// ===== ENV CHANNEL LOCK =====
-const GAMBLING_CHANNEL_ID = process.env.GAMBLING_CHANNEL_ID;
 
 // ===== CONFIG =====
 const MIN_BET = 50;
@@ -21,79 +18,62 @@ function saveUsers(users) {
 }
 
 module.exports = {
+  name: "coinflip",
+  aliases: ["cf"],
   category: "Gambling",
 
-  data: new SlashCommandBuilder()
-    .setName("coinflip")
-    .setDescription("Flip a coin and gamble your RoyalMint coins")
-    .addStringOption(option =>
-      option
-        .setName("side")
-        .setDescription("Choose heads or tails")
-        .setRequired(true)
-        .addChoices(
-          { name: "Heads", value: "heads" },
-          { name: "Tails", value: "tails" }
-        )
-    )
-    .addIntegerOption(option =>
-      option
-        .setName("bet")
-        .setDescription("Amount of coins to bet")
-        .setRequired(true)
-        .setMinValue(MIN_BET)
-        .setMaxValue(MAX_BET)
-    ),
+  async execute(message, args) {
+    const choice = args[0]?.toLowerCase();
+    const bet = parseInt(args[1]);
 
-  async execute(interaction) {
-    // 🔒 CHANNEL CHECK
-    if (interaction.channelId !== GAMBLING_CHANNEL_ID) {
-      return interaction.reply({
-        content: "🎰 Gambling commands are only allowed in the designated gambling channel.",
-        ephemeral: true
-      });
+    if (!choice || !["heads", "tails"].includes(choice)) {
+      return message.reply("❌ Usage: `.coinflip <heads|tails> <amount>`");
     }
 
-    const choice = interaction.options.getString("side");
-    const bet = interaction.options.getInteger("bet");
-    const userId = interaction.user.id;
+    if (!bet || bet < MIN_BET || bet > MAX_BET) {
+      return message.reply(
+        `❌ Bet amount must be between ${MIN_BET} and ${MAX_BET}.`
+      );
+    }
 
+    const userId = message.author.id;
     const users = loadUsers();
 
     if (!users[userId]) {
-      users[userId] = { coins: 0, bank: 0 };
+      users[userId] = {
+        wallet: 5000,
+        bank: 0
+      };
     }
 
-    if (users[userId].coins < bet) {
-      return interaction.reply({
-        content: "💸 You don't have enough coins in your wallet.",
-        ephemeral: true
-      });
+    if (users[userId].wallet < bet) {
+      return message.reply("💸 You don't have enough coins in your wallet.");
     }
 
     const result = Math.random() < 0.5 ? "heads" : "tails";
     const win = result === choice;
 
     if (win) {
-      users[userId].coins += bet;
+      users[userId].wallet += bet;
     } else {
-      users[userId].coins -= bet;
+      users[userId].wallet -= bet;
     }
 
     saveUsers(users);
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Coin Flip")
+      .setColor(win ? "#22C55E" : "#EF4444")
       .setDescription(
-        `🪙 **Bet:** ${bet}\n🎲 **Result:** ${result.toUpperCase()}\n\n` +
+        `🪙 **Bet:** ${bet}\n` +
+        `🎲 **Result:** ${result.toUpperCase()}\n\n` +
         (win
           ? `✅ You **won** ${bet} coins!`
           : `❌ You **lost** ${bet} coins.`)
       )
-      .setColor(win ? "#22C55E" : "#EF4444")
       .setFooter({ text: "Category: Gambling" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
