@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -9,25 +9,44 @@ function getUsers() {
   return JSON.parse(fs.readFileSync(usersPath, "utf8"));
 }
 
+function saveUsers(users) {
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
+
 module.exports = {
-  category: "Economy", // 🔥 THIS IS WHAT MENUS USE
+  name: "balance",
+  aliases: ["bal"],
+  category: "Economy", // 🔥 menu uses this
 
-  data: new SlashCommandBuilder()
-    .setName("balance")
-    .setDescription("Check your RoyalMint balance"),
-
-  async execute(interaction) {
+  async execute(message, args) {
     const users = getUsers();
-    const userId = interaction.user.id;
 
-    const balance = users[userId]?.coins || 0;
+    const target =
+      message.mentions.users.first() || message.author;
+
+    // create user if not exists
+    if (!users[target.id]) {
+      users[target.id] = {
+        wallet: 5000,
+        bank: 0
+      };
+      saveUsers(users);
+    }
+
+    const { wallet, bank } = users[target.id];
 
     const embed = new EmbedBuilder()
       .setTitle("👑 RoyalMint • Balance")
-      .setDescription(`You currently have:\n\n🪙 **${balance} Coins**`)
-      .setColor("#8B5CF6")
-      .setFooter({ text: "Category: Economy" });
+      .setColor("#000000") // dark black
+      .setThumbnail(target.displayAvatarURL())
+      .setDescription(
+        `🪙 **Wallet:** ${wallet}\n` +
+        `🏦 **Bank:** ${bank}`
+      )
+      .setFooter({
+        text: "Category: Economy"
+      });
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
