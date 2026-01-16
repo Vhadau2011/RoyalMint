@@ -1,10 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+
+const { EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
 const usersPath = path.join(__dirname, "../../data/users.json");
 
-// 🔒 Gambling channel lock (ENV)
+// 🔒 Gambling channel (ENV)
 const GAMBLING_CHANNEL_ID = process.env.GAMBLING_CHANNEL_ID;
 
 // 🎰 Config
@@ -36,48 +37,39 @@ function spin() {
 }
 
 module.exports = {
+  name: "slots",
   category: "Gambling",
 
-  data: new SlashCommandBuilder()
-    .setName("slots")
-    .setDescription("Play the slot machine and try your luck")
-    .addIntegerOption(option =>
-      option
-        .setName("bet")
-        .setDescription("Amount of coins to bet")
-        .setRequired(true)
-        .setMinValue(MIN_BET)
-        .setMaxValue(MAX_BET)
-    ),
-
-  async execute(interaction) {
+  async execute(message, args) {
     // 🔒 Channel lock
-    if (interaction.channelId !== GAMBLING_CHANNEL_ID) {
-      return interaction.reply({
-        content: "🎰 Slots can only be played in offical server channel.",
-        ephemeral: true
-      });
+    if (message.channel.id !== GAMBLING_CHANNEL_ID) {
+      return message.reply(
+        "🎰 Slots can only be played in the official gambling channel."
+      );
     }
 
-    const bet = interaction.options.getInteger("bet");
-    const userId = interaction.user.id;
+    const bet = parseInt(args[0]);
+    if (!bet || bet < MIN_BET || bet > MAX_BET) {
+      return message.reply(
+        `❌ Enter a valid bet between **${MIN_BET}** and **${MAX_BET}**.\nExample: \`${process.env.PREFIX}slots 500\``
+      );
+    }
 
     const users = loadUsers();
+    const userId = message.author.id;
+
     if (!users[userId]) {
-      users[userId] = { wallet: 5000, bank: 0 };
+      users[userId] = { coins: 0, bank: 0 };
     }
 
-    if (users[userId].wallet < bet) {
-      return interaction.reply({
-        content: "💸 You don't have enough coins in your wallet.",
-        ephemeral: true
-      });
+    if (users[userId].coins < bet) {
+      return message.reply("💸 You don't have enough coins in your wallet.");
     }
 
     // Deduct bet
-    users[userId].wallet -= bet;
+    users[userId].coins -= bet;
 
-    // Spin slots
+    // Spin
     const a = spin();
     const b = spin();
     const c = spin();
@@ -85,15 +77,14 @@ module.exports = {
     let win = 0;
     let resultText = "❌ You lost.";
 
-    // Win conditions
     if (a === b && b === c) {
       const multiplier = MULTIPLIERS[a] || 2;
       win = bet * multiplier;
-      users[userId].wallet += win;
+      users[userId].coins += win;
       resultText = `🎉 **JACKPOT!** You won **${win} coins** (x${multiplier})`;
     } else if (a === b || b === c || a === c) {
       win = Math.floor(bet * 1.5);
-      users[userId].wallet += win;
+      users[userId].coins += win;
       resultText = `✨ **Nice!** You won **${win} coins**`;
     }
 
@@ -110,6 +101,6 @@ module.exports = {
       .setFooter({ text: "Category: Gambling" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    message.reply({ embeds: [embed] });
   }
 };
